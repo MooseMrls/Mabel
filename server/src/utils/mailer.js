@@ -22,11 +22,6 @@ export async function sendUniqueId({ name, email, uniqueId }) {
       <td align="center">
         <!-- Main Card Wrapper -->
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 580px; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);">
-          
-          <!-- Top Accent Bar -->
-          <tr>
-            <td style="height: 6px; background: linear-gradient(90deg, #eab308 0%, #ca8a04 100%);"></td>
-          </tr>
 
           <!-- Header Area -->
           <tr>
@@ -34,14 +29,14 @@ export async function sendUniqueId({ name, email, uniqueId }) {
               <!-- Logo Container -->
               <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
                 <tr>
-                  <td align="center" style="background: #ffffff; padding: 12px 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #fef08a;">
+                  <td align="center">
                     <img src="https://mbes.vercel.app/mapsa-logo.png" alt="MaPSA Logo" width="130" style="display: block; max-width: 140px; height: auto; border: 0;" />
                   </td>
                 </tr>
               </table>
               
               <h1 style="margin: 0 0 6px 0; font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">
-                Book Evaluation Portal
+                MaPSA Book Evaluation System
               </h1>
               <p style="margin: 0; font-size: 13px; font-weight: 500; color: #64748b; letter-spacing: 0.2px;">
                 Manila Ecclesiastical Province School Systems Association
