@@ -35,7 +35,7 @@ export async function sendUniqueId({ name, email, uniqueId }) {
               <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
                 <tr>
                   <td align="center" style="background: #ffffff; padding: 12px 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #fef08a;">
-                    <img src="https://i.ibb.co/6PZ81fM/MaPSA-1.png" alt="MaPSA Logo" width="130" style="display: block; max-width: 140px; height: auto; border: 0;" />
+                    <img src="https://mbes.vercel.app/mapsa-logo.png" alt="MaPSA Logo" width="130" style="display: block; max-width: 140px; height: auto; border: 0;" />
                   </td>
                 </tr>
               </table>
