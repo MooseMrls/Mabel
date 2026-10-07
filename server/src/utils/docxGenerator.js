@@ -24,8 +24,9 @@ export function fillDocxTemplate(ev) {
   const book = ev.book || {};
   const ratings = ev.ratings || {};
   const scores = ev.scores || {};
+  const pad = (n) => String(n).padStart(2, '0');
   const createdAt = new Date(ev.createdAt || Date.now());
-  const dateStr = createdAt.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+  const dateStr = `${createdAt.getFullYear()}-${pad(createdAt.getMonth() + 1)}-${pad(createdAt.getDate())} ${pad(createdAt.getHours())}:${pad(createdAt.getMinutes())}:${pad(createdAt.getSeconds())}`;
 
   const pubName = book.publisher?.name || '';
 

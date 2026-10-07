@@ -33,7 +33,11 @@ export default function ReportView({ evaluation: ev, config }) {
           </div>
           <div>
             <dt>Date Submitted</dt>
-            <dd>{new Date(ev.createdAt).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</dd>
+            <dd>{(() => {
+              const d = new Date(ev.createdAt);
+              const pad = (n) => String(n).padStart(2, '0');
+              return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            })()}</dd>
           </div>
         </dl>
       </header>

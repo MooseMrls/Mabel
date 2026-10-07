@@ -269,7 +269,9 @@ export function streamReport(ev, res) {
   doc.font('Helvetica').fontSize(8)
     .text('Evaluator Signature / Name', M + 8, certY + 56, { width: 220, align: 'center', lineBreak: false });
 
-  const dateStr = new Date(ev.createdAt || Date.now()).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+  const pad = (n) => String(n).padStart(2, '0');
+  const d = new Date(ev.createdAt || Date.now());
+  const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   doc.font('Helvetica-Bold').fontSize(9)
     .text(dateStr, M + W - 228, certY + 44, { width: 220, align: 'center', lineBreak: false });
   doc.font('Helvetica').fontSize(8)
