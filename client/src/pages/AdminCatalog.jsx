@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { PageHead, ErrorNote } from '../components/Layout.jsx';
 import { BookInfoFields, INFO_ORDER } from '../components/BookInfoFields.jsx';
-import { IconBuilding, IconBook, IconPlus } from '../components/Icons.jsx';
+import { IconBuilding, IconBook, IconPlus, IconUpload, IconDownload } from '../components/Icons.jsx';
 
 export default function AdminCatalog() {
   const { config } = useAuth();
@@ -15,13 +16,50 @@ export default function AdminCatalog() {
   const [pubForm, setPubForm] = useState(null); // { id?, name }
   const [bookForm, setBookForm] = useState(null); // { id?, title, ...info }
   const [error, setError] = useState('');
+  const [msg, setMsg] = useState('');
+
+  // Book Excel Import state
+  const [importingBooks, setImportingBooks] = useState(false);
+  const [bookFile, setBookFile] = useState(null);
+  const [uploadingBooks, setUploadingBooks] = useState(false);
+  const [importBookResult, setImportBookResult] = useState(null);
 
   const loadPublishers = async () => setPublishers((await api.get('/publishers')).publishers);
   const loadBooks = async (id) => setBooks(id ? (await api.get(`/admin/publishers/${id}/books`)).books : []);
   useEffect(() => { loadPublishers().catch((e) => setError(e.message)); }, []);
 
-  const guard = async (fn) => { setError(''); try { await fn(); } catch (e) { setError(e.message); } };
-  const choose = (id) => { setPid(id); setBookForm(null); guard(() => loadBooks(id)); };
+  const guard = async (fn) => { setError(''); setMsg(''); try { await fn(); } catch (e) { setError(e.message); } };
+  const choose = (id) => { setPid(id); setBookForm(null); setImportingBooks(false); guard(() => loadBooks(id)); };
+
+  const downloadBookSampleTemplate = () => {
+    const wsData = [
+      ['Title'],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Books');
+    const pubName = selectedPub ? selectedPub.name.replace(/[^a-zA-Z0-9]/g, '_') : 'Publisher';
+    XLSX.writeFile(wb, `${pubName}_Books_Template.xlsx`);
+  };
+
+  const handleBookFileUpload = async (e) => {
+    e.preventDefault();
+    if (!bookFile || !pid) return;
+    setUploadingBooks(true);
+    setImportBookResult(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', bookFile);
+      const res = await api.upload(`/admin/publishers/${pid}/books/import-excel`, fd);
+      setImportBookResult(res);
+      setMsg(res.message);
+      await loadBooks(pid);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setUploadingBooks(false);
+    }
+  };
 
   const savePublisher = (e) => {
     e.preventDefault();
@@ -144,10 +182,65 @@ export default function AdminCatalog() {
                   <h2 style={{ margin: 0 }}>{selectedPub?.name} Books</h2>
                   <p className="muted small" style={{ margin: '2px 0 0' }}>{books.length} textbook(s) registered</p>
                 </div>
-                <button className="btn small primary" onClick={() => setBookForm({ title: '' })}>
-                  <IconPlus /> Add Textbook
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="btn secondary small" onClick={() => { setImportingBooks(true); setImportBookResult(null); setBookFile(null); }}>
+                    <IconUpload /> Import Excel
+                  </button>
+                  <button className="btn small primary" onClick={() => setBookForm({ title: '' })}>
+                    <IconPlus /> Add Textbook
+                  </button>
+                </div>
               </div>
+
+              <ErrorNote error={msg} type="success" />
+
+              {importingBooks && (
+                <div className="card" style={{ marginTop: '16px', marginBottom: '16px', borderLeft: '4px solid #10b981' }}>
+                  <div className="between">
+                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <IconUpload /> Import Books for {selectedPub?.name}
+                    </h3>
+                    <button type="button" className="btn ghost small" onClick={() => setImportingBooks(false)}>Cancel</button>
+                  </div>
+                  <p className="muted" style={{ fontSize: '13px', margin: '8px 0 16px' }}>
+                    Upload an Excel file (.xlsx or .xls).
+                  </p>
+
+                  <form onSubmit={handleBookFileUpload} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <input
+                        type="file"
+                        accept=".xlsx, .xls"
+                        onChange={(e) => setBookFile(e.target.files[0] || null)}
+                        required
+                        style={{ flex: 1, minWidth: '220px' }}
+                      />
+                      <button className="btn primary small" type="submit" disabled={uploadingBooks || !bookFile}>
+                        {uploadingBooks ? 'Processing...' : 'Upload & Import'}
+                      </button>
+                      <button type="button" className="btn ghost small" onClick={downloadBookSampleTemplate}>
+                        <IconDownload />Template
+                      </button>
+                    </div>
+                  </form>
+
+                  {importBookResult && (
+                    <div style={{ marginTop: '14px', background: '#f8fafc', padding: '12px', borderRadius: '6px', fontSize: '13px' }}>
+                      <div style={{ fontWeight: 600, color: '#0f172a' }}>{importBookResult.message}</div>
+                      {importBookResult.errors && importBookResult.errors.length > 0 && (
+                        <div style={{ marginTop: '8px', color: '#dc2626' }}>
+                          <strong>Warnings / Skipped Rows:</strong>
+                          <ul style={{ margin: '4px 0 0 18px', padding: 0 }}>
+                            {importBookResult.errors.map((err, idx) => (
+                              <li key={idx}>{err}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {bookForm && (
                 <form onSubmit={saveBook} className="subcard">

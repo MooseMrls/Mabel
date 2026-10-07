@@ -44,7 +44,7 @@ export function EvaluationTable({ rows, base }) {
               <th className="num">Avg Rating</th>
               <th>Recommendation</th>
               <th>Date Evaluated</th>
-              <th className="right">Action</th>
+              {base && <th>Action</th>}
             </tr>
           </thead>
           <tbody>
@@ -64,11 +64,13 @@ export function EvaluationTable({ rows, base }) {
                   )}
                 </td>
                 <td className="muted">{new Date(e.createdAt).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
-                <td className="right">
-                  <Link className="btn small" to={`${base}/${e._id}`}>
-                    View Report &rarr;
-                  </Link>
-                </td>
+                {base && (
+                  <td>
+                    <Link to={`${base}/${e._id}`} className="btn ghost sm">
+                      View Report <IconChevron />
+                    </Link>
+                  </td>
+                )}
               </tr>
             ))}
             {filtered.length === 0 && (
@@ -99,7 +101,7 @@ export default function MyEvaluations() {
     <>
       <PageHead title="My Evaluations" sub="Review and download reports for textbooks you have evaluated." />
       <ErrorNote error={error} />
-      {!rows ? <p className="muted pad center">Loading your evaluations...</p> : <EvaluationTable rows={rows} base="/evaluations" />}
+      {!rows ? <p className="muted pad center">Loading your evaluations...</p> : <EvaluationTable rows={rows} />}
     </>
   );
 }

@@ -21,6 +21,20 @@ export const api = {
   get: (p) => request('GET', p),
   post: (p, b) => request('POST', p, b || {}),
   put: (p, b) => request('PUT', p, b || {}),
+  upload: async (path, formData) => {
+    const res = await fetch(`/api${path}`, {
+      method: 'POST',
+      headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {},
+      body: formData,
+    });
+    if (!res.ok) {
+      let message = 'Something went wrong';
+      try { message = (await res.json()).message || message; } catch { /* ignore */ }
+      if (res.status === 401 && getToken()) window.dispatchEvent(new Event('auth:expired'));
+      throw new Error(message);
+    }
+    return res.json();
+  },
   blob: (p) => request('GET', p, null, { blob: true }),
 };
 

@@ -43,7 +43,7 @@ async function seedAdmin() {
   console.log(`Super admin ready (ID: ${uniqueId})`);
 }
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5002;
 app.listen(port, () => console.log(`MaBEL server on http://localhost:${port}`));
 
 mongoose.connect(process.env.MONGO_URI, {

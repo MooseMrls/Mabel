@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { PageHead, ErrorNote } from '../components/Layout.jsx';
-import { IconPlus } from '../components/Icons.jsx';
+import { IconPlus, IconUpload, IconDownload } from '../components/Icons.jsx';
 
 export default function AdminEvaluators() {
   const { user } = useAuth();
@@ -11,6 +12,12 @@ export default function AdminEvaluators() {
   const [form, setForm] = useState(null); // { id?, name, email, role }
   const [error, setError] = useState('');
   const [msg, setMsg] = useState('');
+
+  // Import Modal State
+  const [importing, setImporting] = useState(false);
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [importResult, setImportResult] = useState(null);
 
   const isSuperAdmin = user?.role === 'superadmin';
 
@@ -22,6 +29,35 @@ export default function AdminEvaluators() {
   }, [isSuperAdmin]);
 
   const guard = async (fn) => { setError(''); setMsg(''); try { await fn(); } catch (e) { setError(e.message); } };
+
+  const downloadSampleTemplate = () => {
+    const wsData = [
+      ['Name', 'Email Address', 'Account Type'],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Accounts');
+    XLSX.writeFile(wb, 'MBES_Accounts_Template.xlsx');
+  };
+
+  const handleFileUpload = async (e) => {
+    e.preventDefault();
+    if (!file) return;
+    setUploading(true);
+    setImportResult(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await api.upload('/admin/users/import-excel', fd);
+      setImportResult(res);
+      setMsg(res.message);
+      await load();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   if (!isSuperAdmin) {
     return (
@@ -60,13 +96,66 @@ export default function AdminEvaluators() {
         title="Account Management"
         sub="Manage evaluator, admin, and superadmin accounts and credentials. System automatically generates and emails secure IDs."
       >
-        <button className="btn primary" onClick={() => setForm({ name: '', email: '', role: 'evaluator' })}>
-          <IconPlus /> Add
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn secondary" onClick={() => { setImporting(true); setImportResult(null); setFile(null); }}>
+            <IconUpload /> Import Excel
+          </button>
+          <button className="btn primary" onClick={() => setForm({ name: '', email: '', role: 'evaluator' })}>
+            <IconPlus /> Add
+          </button>
+        </div>
       </PageHead>
 
       <ErrorNote error={error} />
       <ErrorNote error={msg} type="success" />
+
+      {importing && (
+        <div className="card" style={{ marginBottom: '20px', borderLeft: '4px solid #10b981' }}>
+          <div className="between">
+            <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IconUpload />Import Accounts
+            </h2>
+            <button className="btn ghost small" onClick={() => setImporting(false)}>Cancel</button>
+          </div>
+          <p className="muted" style={{ fontSize: '13px', margin: '8px 0 16px' }}>
+            Upload an Excel file (.xlsx or .xls). 
+          </p>
+
+          <form onSubmit={handleFileUpload} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <input
+                type="file"
+                accept=".xlsx, .xls"
+                onChange={(e) => setFile(e.target.files[0] || null)}
+                required
+                style={{ flex: 1, minWidth: '240px' }}
+              />
+              <button className="btn primary" type="submit" disabled={uploading || !file}>
+                {uploading ? 'Processing...' : 'Upload & Import'}
+              </button>
+              <button type="button" className="btn ghost small" onClick={downloadSampleTemplate}>
+                <IconDownload />Template
+              </button>
+            </div>
+          </form>
+
+          {importResult && (
+            <div style={{ marginTop: '16px', background: '#f8fafc', padding: '12px', borderRadius: '6px', fontSize: '13px' }}>
+              <div style={{ fontWeight: 600, color: '#0f172a' }}>{importResult.message}</div>
+              {importResult.errors && importResult.errors.length > 0 && (
+                <div style={{ marginTop: '8px', color: '#dc2626' }}>
+                  <strong>Warnings / Skipped Rows:</strong>
+                  <ul style={{ margin: '4px 0 0 18px', padding: 0 }}>
+                    {importResult.errors.map((err, idx) => (
+                      <li key={idx}>{err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {form && (
         <form className="card" onSubmit={save}>
@@ -150,7 +239,6 @@ export default function AdminEvaluators() {
               <th>Email Address</th>
               <th>Role</th>
               <th>ID</th>
-              <th>Status</th>
               <th className="right">Actions</th>
             </tr>
           </thead>
@@ -165,11 +253,6 @@ export default function AdminEvaluators() {
                   </span>
                 </td>
                 <td><code>{u.uniqueId}</code></td>
-                <td>
-                  <span className={`badge ${u.active !== false ? 'pass' : 'fail'}`}>
-                    {u.active !== false ? 'Active' : 'Disabled'}
-                  </span>
-                </td>
                 <td className="right nowrap" style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                   <button
                     className="btn info small"
